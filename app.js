@@ -391,6 +391,17 @@ function speak(text) {
   speechSynthesis.speak(utt);
 }
 
+/**
+ * Mobile security fix: 'Unlock' speech synthesis inside a user gesture
+ * Browsers like Safari/Chrome on mobile block speech unless it's triggered by a gesture.
+ */
+function unlockSpeech() {
+  if (!window.speechSynthesis) return;
+  const silent = new SpeechSynthesisUtterance(' ');
+  silent.volume = 0;
+  speechSynthesis.speak(silent);
+}
+
 // ── Speech Recognition ──────────────────────────────────────
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition = null;
@@ -542,6 +553,7 @@ const stopEvents = ['mouseup', 'mouseleave', 'touchend'];
 startEvents.forEach(evt => {
   micBtn?.addEventListener(evt, (e) => {
     e.preventDefault();
+    unlockSpeech(); // UNLOCK for mobile
     if (state.speaking) speechSynthesis.cancel();
     startRecognition();
   });
@@ -549,6 +561,7 @@ startEvents.forEach(evt => {
 
 stopEvents.forEach(evt => {
   micBtn?.addEventListener(evt, (e) => {
+    unlockSpeech(); // Double check unlock on release
     if (state.recording) stopRecognition();
   });
 });
