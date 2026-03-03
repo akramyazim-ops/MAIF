@@ -468,7 +468,8 @@ function handlePttFallback() {
 }
 
 function stopRecognition() {
-  if (!state.recording) return; // Prevent duplicate triggers
+  if (!state.recording) return;
+  handlePttFallback(); // Process buffer BEFORE clearing state
   state.recording = false;
   micBtn.classList.remove('recording');
   micBtn.textContent = '🎙️';
@@ -477,7 +478,6 @@ function stopRecognition() {
     setStatus('ready', 'Ready');
     stopWave();
   }
-  handlePttFallback();
   try { recognition && recognition.stop(); } catch (_) { }
 }
 
