@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>M.A.I.F — Kerangka AI Saya</title>
+  <meta name="description"
+    content="M.A.I.F: Pembantu AI suara peribadi anda. Sebut arahan, dapatkan maklum balas pintar, dan automasikan tugas harian dengan Zapier." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <div class="app-wrapper">
+
+    <!-- ═══════════════════════════════════════════════════════
+       HEADER
+  ════════════════════════════════════════════════════════ -->
+    <header class="header">
+      <div class="logo">
+        <div class="logo-icon">🤖</div>
+        <div>
+          <div class="logo-text">M.A.I.F</div>
+          <span class="logo-sub">Kerangka AI Saya — Pembantu Suara</span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <div class="status-pill">
+          <div class="dot" id="statusDot"></div>
+          <span id="dotLabel">Memulakan… (Malaysia)</span>
+        </div>
+        <button class="btn-icon" id="settingsBtn" title="Tetapan (Kunci API &amp; Zapier)">⚙️</button>
+        <button class="btn-icon" title="Pintasan papan kekunci: Tahan Spacebar untuk bercakap"
+          onclick="alert('Pintasan papan kekunci: Tahan SPACE untuk merakam, lepas untuk hantar.')">⌨️</button>
+      </div>
+    </header>
+
+    <!-- ═══════════════════════════════════════════════════════
+       MAIN 3-COLUMN GRID
+  ════════════════════════════════════════════════════════ -->
+    <main class="main">
+
+      <!-- ─── LEFT SIDEBAR: Quick Commands ─────────────────── -->
+      <aside class="sidebar">
+        <div class="sidebar-title">⚡ Arahan Pantas</div>
+
+        <button class="cmd-btn" onclick="sendQuickCmd('Pukul berapa sekarang?')">
+          <span class="cmd-icon">🕐</span>
+          <span class="cmd-label">Waktu sekarang
+            <span class="cmd-sub">Tanya waktu</span>
+          </span>
+        </button>
+        <button class="cmd-btn" onclick="sendQuickCmd('Apakah tarikh hari ini?')">
+          <span class="cmd-icon">📅</span>
+          <span class="cmd-label">Tarikh hari ini
+            <span class="cmd-sub">Tarikh &amp; hari</span>
+          </span>
+        </button>
+        <button class="cmd-btn" onclick="sendQuickCmd('Jadualkan mesyuarat pasukan untuk esok pada pukul 10 pagi')">
+          <span class="cmd-icon">📆</span>
+          <span class="cmd-label">Jadual mesyuarat
+            <span class="cmd-sub">Melalui kalendar Zapier</span>
+          </span>
+        </button>
+        <button class="cmd-btn" onclick="sendQuickCmd('Hantar emel susulan kepada pasukan tentang kemas kini projek')">
+          <span class="cmd-icon">📧</span>
+          <span class="cmd-label">Hantar emel
+            <span class="cmd-sub">Melalui Zapier</span>
+          </span>
+        </button>
+        <button class="cmd-btn"
+          onclick="sendQuickCmd('Ingatkan saya untuk menyemak laporan pada pukul 3 petang hari ini')">
+          <span class="cmd-icon">🔔</span>
+          <span class="cmd-label">Tetapkan peringatan
+            <span class="cmd-sub">Melalui Zapier</span>
+          </span>
+        </button>
+
+        <div class="sidebar-gap"></div>
+        <div class="sidebar-title">🧠 Tugasan AI</div>
+
+        <button class="cmd-btn"
+          onclick="sendQuickCmd('Ringkaskan tugasan saya untuk hari ini dan berikan tip produktiviti')">
+          <span class="cmd-icon">📋</span>
+          <span class="cmd-label">Ringkasan harian
+            <span class="cmd-sub">Taklimat produktiviti</span>
+          </span>
+        </button>
+        <button class="cmd-btn" onclick="sendQuickCmd('Berikan saya kata-kata motivasi untuk memulakan hari saya')">
+          <span class="cmd-icon">🌟</span>
+          <span class="cmd-label">Berikan motivasi
+            <span class="cmd-sub">Inspirasi harian</span>
+          </span>
+        </button>
+        <button class="cmd-btn" onclick="sendQuickCmd('Buat senarai semak untuk pelancaran produk')">
+          <span class="cmd-icon">✅</span>
+          <span class="cmd-label">Buat senarai semak
+            <span class="cmd-sub">Senarai semak AI</span>
+          </span>
+        </button>
+        <button class="cmd-btn"
+          onclick="sendQuickCmd('Hantar kemas kini projek ke Slack: kami baru sahaja melancarkan ciri baru!')">
+          <span class="cmd-icon">💬</span>
+          <span class="cmd-label">Mesej Slack
+            <span class="cmd-sub">Melalui Zapier</span>
+          </span>
+        </button>
+        <button class="cmd-btn" onclick="sendQuickCmd('Apakah trend AI terkini yang perlu saya ketahui?')">
+          <span class="cmd-icon">🔍</span>
+          <span class="cmd-label">Penyelidikan topik
+            <span class="cmd-sub">Jawapan kuasa AI</span>
+          </span>
+        </button>
+      </aside>
+
+      <!-- ─── CENTER: Orb + Mic + Transcript ───────────────── -->
+      <section class="center">
+
+        <!-- AI Orb -->
+        <div class="orb-section">
+          <div class="orb-container">
+            <div class="orb-ring"></div>
+            <div class="orb-ring"></div>
+            <div class="orb-ring"></div>
+            <div class="orb-core" id="orbCore"></div>
+            <div class="orb-icon" id="orbIcon">🤖</div>
+          </div>
+
+          <!-- Waveform -->
+          <div class="waveform-wrap">
+            <canvas id="waveform"></canvas>
+          </div>
+
+          <div class="ai-text" id="aiText">Sedia untuk arahan anda</div>
+
+          <!-- Mic button + continuous toggle -->
+          <div class="mic-section">
+            <div class="continuous-wrap">
+              <span class="tog-label">Berterusan</span>
+              <div class="toggle" id="continuousToggle" title="Mod mendengar berterusan"></div>
+            </div>
+
+            <button class="mic-btn" id="micBtn" title="Tahan untuk bercakap, lepas untuk hantar">🎙️</button>
+
+            <div class="continuous-wrap">
+              <span class="tog-label">Tahan Space</span>
+              <div
+                style="width:46px;height:24px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text-3)">
+                ⎵</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Transcript -->
+        <div class="transcript-section">
+          <div class="transcript-header">
+            <span class="transcript-title">💬 Perbualan</span>
+            <button class="clear-btn" onclick="clearTranscript()">Padam sembang</button>
+          </div>
+          <div id="interim"></div>
+          <div class="transcript-scroll" id="transcriptScroll"></div>
+        </div>
+
+      </section>
+
+      <!-- ─── RIGHT SIDEBAR: Settings + Stats ──────────────── -->
+      <aside class="right-sidebar">
+
+        <!-- Zapier quick-connect -->
+        <div class="widget">
+          <div class="widget-title">⚡ Zapier</div>
+          <label>URL Webhook</label>
+          <input type="url" id="zapierQuick" placeholder="https://hooks.zapier.com/…" />
+          <label>Frasa pencetus</label>
+          <input type="text" id="triggerPhrase" placeholder="cth: hantar ke zapier" />
+          <button class="btn-save" onclick="quickSaveZapier()">Simpan Tetapan Zapier</button>
+        </div>
+
+        <!-- Stats widget -->
+        <div class="widget">
+          <div class="widget-title">📊 Statistik Sesi</div>
+          <div class="stat-row">
+            <span class="stat-label">Arahan</span>
+            <span class="stat-value a1" id="statCmds">0</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Pencetus Zapier</span>
+            <span class="stat-value a2" id="statZaps">0</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Masa sesi</span>
+            <span class="stat-value a3" id="statSession">baru bermula</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Penyedia AI</span>
+            <span class="stat-value" id="statProvider">—</span>
+          </div>
+        </div>
+
+        <!-- Suggested prompts -->
+        <div class="widget">
+          <div class="widget-title">💡 Cuba katakan…</div>
+          <div class="chip-list">
+            <span class="chip" onclick="sendQuickCmd('Jadualkan mesyuarat')">Jadual mesyuarat</span>
+            <span class="chip" onclick="sendQuickCmd('Hantar emel kepada pasukan')">Hantar emel</span>
+            <span class="chip" onclick="sendQuickCmd('Tetapkan peringatan')">Set peringatan</span>
+            <span class="chip" onclick="sendQuickCmd('Ringkaskan hari saya')">Ringkasan harian</span>
+            <span class="chip" onclick="sendQuickCmd('Beritahu lawak')">Cerita lawak</span>
+            <span class="chip" onclick="sendQuickCmd('Apa yang anda boleh buat?')">Bantu saya</span>
+            <span class="chip" onclick="sendQuickCmd('Buat pelan projek untuk bina aplikasi')">Pelan projek</span>
+            <span class="chip" onclick="sendQuickCmd('Berikan saya motivasi')">Motivasi</span>
+          </div>
+        </div>
+
+        <!-- Integration guide -->
+        <div class="widget">
+          <div class="widget-title">🔗 Integrasi</div>
+          <div style="font-size:12px;color:var(--text-2);line-height:1.8">
+            <div>📧 Gmail → Draf emel automatik</div>
+            <div>📅 Google Calendar → Acara</div>
+            <div>💬 Slack → Hantar mesej</div>
+            <div>✅ Notion → Buat tugasan</div>
+            <div>📊 Google Sheets → Log data</div>
+            <div style="margin-top:8px;font-size:11px;color:var(--text-3)">
+              Sambungkan ini di <a href="https://zapier.com" target="_blank"
+                style="color:var(--accent-2);text-decoration:none">Zapier.com</a> dan tampal URL webhook anda di atas.
+            </div>
+          </div>
+        </div>
+
+      </aside>
+    </main>
+
+  </div><!-- /.app-wrapper -->
+
+  <!-- ═══════════════════════════════════════════════════════════
+     SETTINGS MODAL
+════════════════════════════════════════════════════════════ -->
+  <div class="modal-backdrop" id="settingsModal">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">⚙️ Tetapan</span>
+        <button class="modal-close" id="modalClose">✕</button>
+      </div>
+
+      <label>Penyedia AI</label>
+      <select id="inputApiProv">
+        <option value="openai">OpenAI (GPT-4o / GPT-4o-mini)</option>
+        <option value="gemini">Google Gemini (Flash 2.0)</option>
+        <option value="deepseek">DeepSeek (deepseek-chat)</option>
+      </select>
+
+      <label>Kunci API</label>
+      <input type="password" id="inputApiKey" placeholder="sk-… (OpenAI / DeepSeek) atau AIza… (Gemini)"
+        autocomplete="off" />
+      <div class="hint">💡 Berfungsi tanpa kunci menggunakan maklum balas pintar terbina dalam. Kunci mengaktifkan kuasa
+        penuh AI.</div>
+
+      <label>URL Webhook Zapier</label>
+      <input type="url" id="inputZapier" placeholder="https://hooks.zapier.com/hooks/catch/…" />
+      <div class="hint">⚡ AI akan secara automatik menghantar tindakan yang dikesan (emel, peringatan) ke webhook ini.
+      </div>
+
+      <label>Suara</label>
+      <select id="inputVoice"></select>
+
+      <label>Kadar Pertuturan — <span id="rateVal">1</span>×</label>
+      <input type="range" id="inputRate" min="0.5" max="2" step="0.1" value="1" />
+
+      <label>Kelantangan — <span id="pitchVal">1</span></label>
+      <input type="range" id="inputPitch" min="0.5" max="2" step="0.1" value="1" />
+
+      <div class="modal-footer">
+        <button class="btn-cancel" id="modalCancel">Batal</button>
+        <button class="btn-primary" id="modalSave">Simpan Tetapan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script src="app.js"></script>
+  <script>
+    // Quick Zapier save from right sidebar
+    function quickSaveZapier() {
+      const url = document.getElementById('zapierQuick').value.trim();
+      if (url) { config.zapierUrl = url; saveConfig(); toast('✅ URL Zapier disimpan!', 'success'); }
+      else toast('⚠️ Masukkan URL webhook Zapier terlebih dahulu.', 'error');
+    }
+    // Show current provider in stats
+    function refreshProviderStat() {
+      const el = document.getElementById('statProvider');
+      if (el) {
+        if (!config.apiKey) el.textContent = 'Terbina dalam';
+        else if (config.apiProvider === 'gemini') el.textContent = 'Gemini';
+        else if (config.apiProvider === 'deepseek') el.textContent = 'DeepSeek';
+        else el.textContent = 'OpenAI';
+      }
+    }
+    // Update stats & provider every 5s
+    setInterval(() => { updateStats(); refreshProviderStat(); }, 5000);
+    refreshProviderStat();
+
+    // Pre-fill Zapier quick input if already saved
+    if (config.zapierUrl) {
+      const qi = document.getElementById('zapierQuick');
+      if (qi) qi.value = config.zapierUrl;
+    }
+  </script>
+</body>
+
+</html>
