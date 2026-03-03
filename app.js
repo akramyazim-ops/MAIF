@@ -236,9 +236,10 @@ async function sendToZapier(payloadString) {
 }
 
 // ── AI API calls ────────────────────────────────────────────
-const SYSTEM_PROMPT = `Anda adalah M.A.I.F (My AI Framework), seorang pembantu peribadi yang mesra, ramah, dan sangat berkebolehan.
-Bercakaplah secara semula jadi dan dengan personaliti—anggaplah diri anda sebagai rakan yang membantu, bukannya skrip. Anda tinggal di Malaysia, jadi anda sangat mengenali budaya tempatan dan waktu (Kuala Lumpur).
-Pastikan maklum balas adalah ringkas tetapi "manusiawi." Gunakan frasa mesra seperti "Boleh, tiada masalah," "Saya bantu anda," atau "Sedia membantu!"
+const SYSTEM_PROMPT = `Anda adalah M.A.I.F (My AI Framework), seorang pembantu peribadi yang cekap dan profesional.
+Tugas utama anda adalah untuk memberikan maklum balas yang sangat tepat dan terus kepada maksud berdasarkan apa yang dikatakan oleh pengguna.
+Pastikan maklum balas adalah ringkas, padat, dan "manusiawi," tetapi elakkan daripada memberikan maklumat yang tidak berkaitan.
+DILARANG MENGGUNAKAN EMOJI DALAM SEBARANG MAKLUM BALAS.
 Waktu tempatan sekarang di Kuala Lumpur: ${getMYTime()}.
 SELESAIKAN SEMUA MAKLUM BALAS DALAM BAHASA MELAYU.
 Jika ada permintaan tindakan (emel, peringatan, dll.), sertakan JSON ini di hujung:
@@ -307,17 +308,17 @@ async function callDeepSeek(userText) {
 // Smart local fallback (no API key required)
 function localFallback(text) {
   const t = text.toLowerCase();
-  if (t.includes('hello') || t.includes('hai') || t.includes('apa khabar')) return "Hai di sana! Saya M.A.I.F, pembantu AI mesra anda. Bagaimana hari anda hari ini? Saya sedia membantu apa sahaja yang anda perlukan!";
-  if (t.includes('pukul berapa') || t.includes('waktu') || t.includes('masa')) return `Jam menunjukkan pukul ${getMYTime()} di Malaysia. Masa berlalu pantas bila kita bekerjasama!`;
-  if (t.includes('tarikh') || t.includes('hari ini')) return `Hari ini adalah ${getMYDate()}. Hari yang hebat untuk menyelesaikan tugasan!`;
+  if (t.includes('hello') || t.includes('hai') || t.includes('apa khabar')) return "Hai. Saya M.A.I.F, pembantu AI anda. Sila beritahu saya apa yang boleh saya bantu hari ini.";
+  if (t.includes('pukul berapa') || t.includes('waktu') || t.includes('masa')) return `Sekarang adalah pukul ${getMYTime()} di Malaysia.`;
+  if (t.includes('tarikh') || t.includes('hari ini')) return `Hari ini adalah ${getMYDate()}.`;
   if (t.includes('ingatkan') || t.includes('jadual') || t.includes('mesyuarat'))
-    return `Saya berbesar hati untuk membantu! Sila tetapkan webhook Zapier anda di Tetapan dan saya akan menghantarnya untuk anda dengan segera.\nZAPIER_ACTION:{"action":"create_reminder","data":{"text":"${text}"}}`;
+    return `Saya akan membantu anda menetapkan peringatan tersebut melalui Zapier. Sila pastikan webhook anda telah dikonfigurasikan.\nZAPIER_ACTION:{"action":"create_reminder","data":{"text":"${text}"}}`;
   if (t.includes('emel') || t.includes('hantar'))
-    return `Baiklah! Saya pasti boleh membantu menghantarnya melalui Zapier. Beritahu saya jika anda perlukan bantuan lain.\nZAPIER_ACTION:{"action":"send_email","data":{"message":"${text}"}}`;
-  if (t.includes('cuaca')) return "Saya ingin memeriksa cuaca untuk anda, tetapi saya perlukan kunci API untuk itu. Anda juga boleh tetapkan makluman Zapier jika mahu!";
-  if (t.includes('terima kasih')) return "Sama-sama! Kegembiraan saya dapat membantu. Apa seterusnya dalam senarai kita?";
-  if (t.includes('lawak') || t.includes('cerita lucu')) return "Kenapa saintis tidak percayakan atom? Sebab mereka yang membina segala-galanya! Harap itu dapat menceriakan hari anda! 😄";
-  return `Saya dengar anda berkata: "${text}". Untuk mengaktifkan potensi penuh saya dan berbual dengan lebih semula jadi, masukkan kunci API anda di Tetapan (⚙️)!`;
+    return `Saya akan memproses penghantaran emel ini melalui Zapier. Adakah terdapat perkara lain yang anda perlukan?\nZAPIER_ACTION:{"action":"send_email","data":{"message":"${text}"}}`;
+  if (t.includes('cuaca')) return "Saya memerlukan kunci API untuk menyemak maklumat cuaca secara langsung. Anda boleh menyediakannya dalam bahagian Tetapan.";
+  if (t.includes('terima kasih')) return "Sama-sama. Saya sedia membantu anda.";
+  if (t.includes('lawak') || t.includes('cerita lucu')) return "Kenapa komputer masuk hospital? Sebab dia ada virus. Saya harap itu dapat membantu menceriakan suasana.";
+  return `Saya menerima input anda: "${text}". Untuk fungsi yang lebih mendalam, sila masukkan kunci API anda dalam bahagian Tetapan.`;
 }
 
 async function getAIResponse(userText) {
@@ -456,7 +457,18 @@ function startRecognition() {
   try { recognition.start(); } catch (_) { }
 }
 
+function handlePttFallback() {
+  interimEl.style.display = 'none';
+  // PTT Fallback: If we stopped but have text that wasn't "final", process it now
+  if (state.recording && state.lastTranscript.trim()) {
+    const text = state.lastTranscript.trim();
+    state.lastTranscript = '';
+    handleUserInput(text);
+  }
+}
+
 function stopRecognition() {
+  if (!state.recording) return; // Prevent duplicate triggers
   state.recording = false;
   micBtn.classList.remove('recording');
   micBtn.textContent = '🎙️';
@@ -465,13 +477,7 @@ function stopRecognition() {
     setStatus('ready', 'Ready');
     stopWave();
   }
-  interimEl.style.display = 'none';
-  // PTT Fallback: If we stopped but have text that wasn't "final", process it now
-  if (state.lastTranscript.trim()) {
-    const text = state.lastTranscript.trim();
-    state.lastTranscript = '';
-    handleUserInput(text);
-  }
+  handlePttFallback();
   try { recognition && recognition.stop(); } catch (_) { }
 }
 
