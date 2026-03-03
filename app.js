@@ -21,7 +21,8 @@ const state = {
   sessionStart: Date.now(),
   cmdCount: 0,
   zapCount: 0,
-  conversation: []
+  conversation: [],
+  lastTranscript: '' // Buffer for PTT capture
 };
 
 // ── Load persisted config ───────────────────────────────────
@@ -419,6 +420,7 @@ function initRecognition() {
       if (e.results[i].isFinal) final += t;
       else interim += t;
     }
+    state.lastTranscript = final || interim;
     if (interim) interimEl.textContent = '🎙️ ' + interim;
     if (final) handleUserInput(final.trim());
   };
@@ -453,11 +455,18 @@ function stopRecognition() {
     stopWave();
   }
   interimEl.style.display = 'none';
+  // PTT Fallback: If we stopped but have text that wasn't "final", process it now
+  if (state.lastTranscript.trim()) {
+    const text = state.lastTranscript.trim();
+    state.lastTranscript = '';
+    handleUserInput(text);
+  }
   try { recognition && recognition.stop(); } catch (_) { }
 }
 
 async function handleUserInput(text) {
   if (!text) return;
+  state.lastTranscript = ''; // Clear buffer since we are processing
   stopRecognition();
   interimEl.style.display = 'none';
   state.cmdCount++;
